@@ -1,23 +1,26 @@
-import logo from './logo.svg';
-import './App.css';
+import React, { useState, useEffect } from 'react';
 
 function App() {
+  const [data, setData] = useState({}); // Assuming the expected data is an object
+
+  useEffect(() => {
+    fetch(`${process.env.REACT_APP_BACKEND_URL}/hello`)
+      .then(res => res.json()
+      )
+      .then(data => {
+        setData(data);
+        console.log(data);
+      })
+      .catch(error => console.error("Fetch error:", error)); // Error handling
+  }, []); // Dependency array is empty, indicating this effect runs once on mount
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div>
+      {typeof data.yeahboi === "undefined" ? (
+        <p>Loading... Updated to using process.env</p> // Displaying a loading message instead of trying to render `data` directly
+      ) : (
+        data.yeahboi.map((yeahboi, i) => <p key={i}>{yeahboi}</p>)
+      )}
     </div>
   );
 }
