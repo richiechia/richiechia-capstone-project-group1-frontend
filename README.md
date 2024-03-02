@@ -73,3 +73,6 @@ This section has moved here: [https://facebook.github.io/create-react-app/docs/t
 
 docker build -t react_image_test .
 docker run -p 8080:80 react_image_test
+
+
+Change the "REACT_APP_BACKEND_URL" in .env as necessary
