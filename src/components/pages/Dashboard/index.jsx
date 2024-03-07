@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Box,
   Button,
@@ -10,69 +10,153 @@ import {
   FormControl,
   FormLabel,
   Textarea,
-  Text
+  Text,
 } from '@chakra-ui/react';
 
 const ImageUploadDisplayPage = () => {
   const toast = useToast();
-  const [images, setImages] = useState([]);
   const [description, setDescription] = useState('');
+  const [data, setData] = useState({ data: [] });
+  const [name, setName] = useState('');
 
-  // Function to fetch images (you'll replace this with your actual fetching logic)
-  const fetchImages = async () => {
-    const fetchedImages = await fetch('YOUR_API_ENDPOINT').then(response => response.json());
-    setImages(fetchedImages);
+
+  const fetchData = () => {
+    fetch(`${process.env.REACT_APP_BACKEND_URL}/get-files`)
+      .then(res => res.json())
+      .then(data => {
+        setData(data);
+      })
+      .catch(error => {
+        console.error("Fetch error:", error);
+        toast({
+          title: 'Error fetching data',
+          description: 'There was an issue fetching the submissions.',
+          status: 'error',
+          duration: 5000,
+          isClosable: true,
+        });
+      });
   };
 
-  const handleFileChange = (e) => {
-    // File upload handling logic here
-  };
+  // Code to get all the files
+  useEffect(() => {
+    fetchData();
+    }, []); 
+  
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // Here, implement your submission logic to your backend
-    // For demonstration, we'll just show a toast and clear the form.
+
+    // Validate description and file
+    if (!description.trim() || !name.trim()) {
+      toast({
+        title: 'Error',
+        description: 'Both description and an name are required.',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+      return;
+    }
+      
+    const formData = {
+      "user" : name,
+      "content" : description,
+      "filename" : ""
+    }
+
+    try {
+      const response = await fetch (`${process.env.REACT_APP_BACKEND_URL}/upload-files`, {
+      method: 'POST',
+      headers: {
+        'Content-Type' : 'application/json'
+      },
+      body: JSON.stringify(formData)});
+
+      if (response.ok) {
+      const data = await response.json();
+      // Handle success
+      toast({
+        title: 'Success',
+        description: 'Your information and image have been submitted successfully.',
+        status: 'success',
+        duration: 5000,
+        isClosable: true,
+      });
+      // Clear form fields and reset file input
+      setName('');
+      setDescription('');
+
+    } else {
+      // Handle server errors
+      throw new Error('Failed to submit data');
+    }
+    } catch (error) {
+      console.error('Submission error:', error);
     toast({
-      title: "Submission successful.",
-      description: "Your information has been submitted.",
-      status: "success",
+      title: 'Submission Error',
+      description: 'There was a problem submitting your form. Please try again.',
+      status: 'error',
       duration: 5000,
       isClosable: true,
     });
+    }
 
-    setDescription(''); // Clear the text input after submission
-    // Optionally, fetch images again if your backend immediately processes and includes the new data
-    // fetchImages();
+    // Clear form fields and reset file input
+    console.log("Submitted Name: ", name);
+    console.log("Submitted Description: ", description);
+    // Reset form
+    setName('');
+    setDescription('');
+    fetchData();
+  
   };
 
   return (
     <VStack spacing={8}>
       <Box p={5} shadow="md" borderWidth="1px" width="full">
-        <FormControl>
-          <FormLabel htmlFor="image-upload">Image Upload</FormLabel>
-          <Input id="image-upload" type="file" onChange={handleFileChange} accept="image/*" />
-          <FormLabel mt={4} htmlFor="description">Description</FormLabel>
-          <Textarea
-            id="description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="Enter description here..."
-          />
-          <Button mt={4} colorScheme="blue" onClick={handleSubmit}>Submit</Button>
-        </FormControl>
+        <form onSubmit={handleSubmit}>
+          <FormControl id="name" isRequired>
+            <FormLabel>Name</FormLabel>
+            <Input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Enter your name"
+            />
+          </FormControl>
+
+          <FormControl id="description" mt={4} isRequired>
+            <FormLabel>Description</FormLabel>
+            <Textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Enter a description"
+            />
+          </FormControl>
+
+          <Button mt={4} colorScheme="teal" type="submit">
+            Submit
+          </Button>
+        </form>
       </Box>
       <Box p={5} shadow="md" borderWidth="1px" width="full">
-        <Text fontSize="2xl" fontWeight="bold" mb={4}>Submissions</Text>
-        {images.length > 0 ? (
-          <SimpleGrid columns={3} spacing={4}>
-            {images.map((image, index) => (
-              <Image key={index} src={image.url} alt={`Image ${index}`} boxSize="150px" objectFit="cover" />
-            ))}
-          </SimpleGrid>
-        ) : (
-          <Text>No records found</Text>
-        )}
-      </Box>
+  <Text fontSize="2xl" fontWeight="bold" mb={4}>Submissions</Text>
+  {
+    Array.isArray(data['data']) && data['data'].length > 0 ? (
+      <SimpleGrid columns={3} spacing={4}>
+        {data['data'].map((list, index) => (
+          <Box key={index} border="1px" borderColor="gray.200" p={4} borderRadius="md" boxShadow="md" m={2}>
+            <Text mb={2}>{list.content}</Text>
+            <Text fontWeight="bold">- {list.user}</Text>
+          </Box>
+        ))}
+      </SimpleGrid>
+    ) : (
+      <Text>No records found</Text>
+    )
+  }
+</Box>
     </VStack>
   );
 };
