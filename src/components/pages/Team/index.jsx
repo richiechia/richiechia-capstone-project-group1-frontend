@@ -23,7 +23,7 @@ const testimonials = [
     name: 'Lim Wei Yang',
     role: 'Group Member',
     content:
-      "Great stuff",
+      "Good shit",
     avatar:
       'https://sctp-ce4-group1-react-flask.s3.ap-southeast-1.amazonaws.com/mushutfd.jpg',
   },
